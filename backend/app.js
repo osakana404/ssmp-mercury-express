@@ -1,8 +1,7 @@
 import express from "express";
 import "dotenv/config";
 import { sequelize } from "./src/config/db.js";
-
-import News from "./src/models/News.js";
+import { News, Category } from "./src/models/associations.js";
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -11,11 +10,6 @@ const app = express();
 try {
   await sequelize.authenticate();
   console.log("- База данных SQLite подключена успешно.");
-
-  // Автоматически создаем таблицы, если их нет
-  // alter: true подправит таблицу, если ты добавишь новые поля в модели
-  await sequelize.sync({ alter: true });
-  console.log("- Модели синхронизированы.");
 } catch (error) {
   console.error("- Ошибка подключения к БД:", error);
 }
@@ -26,15 +20,44 @@ app.get("/", (req, res) => {
   res.send("hello");
 });
 
-app.post("/news", async (req, res) => {
+app.post("/categories", async (req, res) => {
   try {
-    const item = await News.create({
-      title: "Открытие гаража",
-      description: "Сегодня мы начинаем работу в новой системе!",
-    });
-    res.status(201).json(item);
+    const category = await Category.create({ name: req.body.name });
+    res.status(201).json(category);
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+app.get("/news", async (req, res) => {
+  try {
+    // Жадная загрузка: тянем новость ВМЕСТЕ с категорией
+    const news = await News.findAll({
+      include: Category,
+    });
+    res.json(news);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/news", async (req, res) => {
+  const { newsTitle, newsContent, newsCategory } = req.body;
+
+  if (!newsTitle) {
+    return res.status(400).json({ message: "Ошибка тайтл пуст" });
+  }
+
+  try {
+    await News.create({
+      title: newsTitle,
+      content: newsContent,
+      categoryId: newsCategory,
+    });
+    return res.status(201).json({ message: "Successfully created!" });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: error.message });
   }
 });
 

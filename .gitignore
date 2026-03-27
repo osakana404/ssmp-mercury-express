@@ -1,7 +1,7 @@
 # db
 db.sqlite
 db_prod.sqlite
-src/config/config.json
+backend/src/config/config.json
 .env
 *.sqlite
 
