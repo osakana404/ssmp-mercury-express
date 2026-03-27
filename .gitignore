@@ -1,6 +1,9 @@
 # db
 db.sqlite
 db_prod.sqlite
+src/config/config.json
+.env
+*.sqlite
 
 # Logs
 logs
