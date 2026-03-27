@@ -1,11 +1,12 @@
 import express from "express";
 import "dotenv/config";
+import cors from "cors";
 import { sequelize } from "./src/config/db.js";
 import { News, Category, Files } from "./src/models/associations.js";
 
 const PORT = process.env.PORT || 3000;
 const app = express();
-
+app.use(cors());
 // Проверка подключения к базе при старте
 try {
   await sequelize.authenticate();

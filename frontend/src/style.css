@@ -1,0 +1,11 @@
+.news-card {
+  border: 1px solid #ddd;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+.assets-gallery img {
+  max-width: 300px;
+  display: block;
+  margin: 10px 0;
+}
