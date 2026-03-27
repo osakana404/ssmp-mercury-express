@@ -1,7 +1,7 @@
 import express from "express";
 import "dotenv/config";
 import { sequelize } from "./src/config/db.js";
-import { News, Category } from "./src/models/associations.js";
+import { News, Category, Files } from "./src/models/associations.js";
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -33,7 +33,7 @@ app.get("/news", async (req, res) => {
   try {
     // Жадная загрузка: тянем новость ВМЕСТЕ с категорией
     const news = await News.findAll({
-      include: Category,
+      include: [{ model: Category }, { model: Files }],
     });
     res.json(news);
   } catch (e) {
@@ -41,19 +41,27 @@ app.get("/news", async (req, res) => {
   }
 });
 
+// создать новость
 app.post("/news", async (req, res) => {
-  const { newsTitle, newsContent, newsCategory } = req.body;
+  const { newsTitle, newsContent, newsCategory, assets } = req.body;
 
   if (!newsTitle) {
     return res.status(400).json({ message: "Ошибка тайтл пуст" });
   }
 
   try {
-    await News.create({
-      title: newsTitle,
-      content: newsContent,
-      categoryId: newsCategory,
-    });
+    await News.create(
+      {
+        title: newsTitle,
+        content: newsContent,
+        categoryId: newsCategory,
+        Files: assets,
+      },
+      {
+        include: [Files], // ГОВОРИМ SEQUELIZE: "Смотри внутрь и создавай вложенные файлы!"
+      },
+    );
+
     return res.status(201).json({ message: "Successfully created!" });
   } catch (error) {
     console.error(error.message);
