@@ -24,6 +24,11 @@ paths:
           multipart/form-data:
             schema:
               type: object
+              # ВОТ ЭТО ОПРЕДЕЛЯЕТ ОБЯЗАТЕЛЬНЫЕ ПОЛЯ
+              required:
+                - title
+                - content
+                - categoryId
               properties:
                 title:
                   type: string
@@ -34,7 +39,7 @@ paths:
                 categoryId:
                   type: integer
                   example: 1
-                files:
+                files: # Это поле теперь опциональное, так как его нет в списке required
                   type: array
                   items:
                     type: string

@@ -38,7 +38,19 @@ export async function getSingleNews(req, res, next) {
 export async function createNews(req, res, next) {
   try {
     const { title, content, categoryId } = req.body;
-
+    // Проверяем обязательные текстовые поля
+    if (!title || !content || !categoryId) {
+      return res.status(400).json({
+        message: "Заполните все поля: заголовок, контент и категория",
+      });
+    }
+    // Существует ли такая категория в базе?
+    const categoryExists = await Category.findByPk(categoryId);
+    if (!categoryExists) {
+      return res
+        .status(400)
+        .json({ message: `Категория с ID ${categoryId} не существует` });
+    }
     // Получаем пути к файлам, которые Multer сохранил на диск
     const assets = req.files.map((file, index) => ({
       // req.protocol (http/https) + host (ip:port)
@@ -47,11 +59,6 @@ export async function createNews(req, res, next) {
       priority: index,
     }));
 
-    if (!title || !content || !categoryId) {
-      return res
-        .status(401)
-        .json({ message: "Заполните все необходимые поля" });
-    }
     const newRecord = await News.create(
       {
         title: title,
