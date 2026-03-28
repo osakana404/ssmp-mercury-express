@@ -1,0 +1,89 @@
+paths:
+  /news:
+    get:
+      summary: Получить список всех новостей
+      tags:
+        - News
+      responses:
+        200:
+          description: Массив новостей с вложенными категориями и файлами
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/News"
+
+    post:
+      summary: Создать новую новость с файлами
+      tags:
+        - News
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Как настроить принтер"
+                content:
+                  type: string
+                  example: "Подробная инструкция по шагам..."
+                categoryId:
+                  type: integer
+                  example: 1
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        201:
+          description: Новость успешно создана
+
+  /news/{id}:
+    get:
+      summary: Получить одну новость по ID
+      tags:
+        - News
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Объект новости
+        404:
+          description: Новость не найдена
+
+components:
+  schemas:
+    News:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        categoryId:
+          type: integer
+        Category:
+          type: object
+          properties:
+            name:
+              type: string
+        Files:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+              type:
+                type: string

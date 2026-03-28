@@ -5,6 +5,30 @@ import { sequelize } from "./src/config/db.js";
 import { newsRouter } from "./src/routes/newsRouter.js";
 import multer from "multer";
 
+import swaggerJSDoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
+
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "SSMP MERCURY",
+      version: "1.0.0",
+      description: "Меркурий ССМП",
+    },
+    servers: [
+      {
+        url: "http://localhost:3000/api/v1",
+        description: "Локальный сервер",
+      },
+    ],
+  },
+  // Пути к файлам, где пишем доку
+  apis: ["./src/docs/*.yaml"], // Swagger ищет описание в отдельном файле
+};
+
+const swaggerSpec = swaggerJSDoc(swaggerOptions);
+
 const PORT = process.env.PORT || 3000;
 const app = express();
 app.use(cors()); // всё разрешено
@@ -18,7 +42,8 @@ try {
 } catch (error) {
   console.error("- Ошибка подключения к БД:", error);
 }
-
+// На каком адресе будет висеть документация
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use(express.json()); // чтобы сервер понимал JSON в запросах
 
 app.get("/", (req, res) => {
