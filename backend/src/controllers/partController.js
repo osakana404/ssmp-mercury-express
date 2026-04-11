@@ -1,5 +1,20 @@
 import { Part, Transaction, Car } from "../models/associations.js";
 
+export async function getAllParts(req, res, next) {
+  try {
+    // Находим все запчасти в базе данных
+    const parts = await Part.findAll({
+      order: [["name", "ASC"]], // Сортировка по имени от А до Я
+    });
+
+    // Отправляем массив клиенту
+    res.status(200).json(parts);
+  } catch (error) {
+    // Если что-то пошло не так, передаем ошибку в обработчик
+    next(error);
+  }
+}
+
 export async function prihod(req, res, next) {
   try {
     const { name, quantity, description, price, date } = req.body;
