@@ -1,6 +1,9 @@
 import News from "./News.js";
 import Category from "./Category.js";
 import Files from "./Files.js";
+import Part from "./part.js";
+import Transaction from "./transaction.js";
+import Car from "./car.js";
 
 // от родителя к детям
 Category.hasMany(News, { foreignKey: "categoryId" });
@@ -10,4 +13,12 @@ News.belongsTo(Category, { foreignKey: "categoryId" });
 News.hasMany(Files, { foreignKey: "newsId" });
 Files.belongsTo(News, { foreignKey: "newsId" });
 
-export { News, Category, Files };
+// Связь с Запчастями
+Part.hasMany(Transaction, { foreignKey: "partId" });
+Transaction.belongsTo(Part, { foreignKey: "partId" });
+
+// Связь с Машинами
+Car.hasMany(Transaction, { foreignKey: "carId" });
+Transaction.belongsTo(Car, { foreignKey: "carId" });
+
+export { News, Category, Files, Part, Car, Transaction };

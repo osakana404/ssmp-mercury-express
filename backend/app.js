@@ -7,6 +7,8 @@ import multer from "multer";
 
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import { transactionRouter } from "./src/routes/transactionRouter.js";
+import { partRouter } from "./src/routes/partRouter.js";
 
 const swaggerOptions = {
   definition: {
@@ -52,6 +54,8 @@ app.get("/", (req, res) => {
 
 // роуты
 app.use("/api/v1/news", newsRouter);
+app.use("/api/v1/parts", partRouter);
+app.use("/api/v1/transactions", transactionRouter);
 
 // Правильный единый обработчик ошибок
 app.use((err, req, res, next) => {
