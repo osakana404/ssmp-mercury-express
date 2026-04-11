@@ -1,4 +1,11 @@
+openapi: 3.0.0
+info:
+  title: Mercury Express API
+  version: 1.0.0
+  description: API для управления новостями и складским учетом запчастей
+
 paths:
+  # --- СЕКЦИЯ НОВОСТЕЙ ---
   /news:
     get:
       summary: Получить список всех новостей
@@ -13,7 +20,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/News"
-
     post:
       summary: Создать новую новость с файлами
       tags:
@@ -24,7 +30,6 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              # ВОТ ЭТО ОПРЕДЕЛЯЕТ ОБЯЗАТЕЛЬНЫЕ ПОЛЯ
               required:
                 - title
                 - content
@@ -39,7 +44,7 @@ paths:
                 categoryId:
                   type: integer
                   example: 1
-                files: # Это поле теперь опциональное, так как его нет в списке required
+                files:
                   type: array
                   items:
                     type: string
@@ -64,6 +69,70 @@ paths:
           description: Объект новости
         404:
           description: Новость не найдена
+
+  # --- СЕКЦИЯ ЗАПЧАСТЕЙ ---
+  /parts/prihod:
+    post:
+      summary: Оприходовать запчасть
+      tags:
+        - Parts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - quantity
+                - price
+              properties:
+                name:
+                  type: string
+                  example: "Масляный фильтр"
+                quantity:
+                  type: integer
+                  example: 10
+                price:
+                  type: number
+                  example: 500
+                description:
+                  type: string
+                  example: "Оригинальный фильтр"
+      responses:
+        201:
+          description: Успешно оприходовано
+
+  /parts/spisanie:
+    post:
+      summary: Списать запчасть на машину
+      tags:
+        - Parts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - partId
+                - carId
+                - quantity
+              properties:
+                partId:
+                  type: integer
+                  example: 1
+                carId:
+                  type: integer
+                  example: 1
+                quantity:
+                  type: integer
+                  example: 1
+      responses:
+        201:
+          description: Успешно списано
+        400:
+          description: Ошибка (например, недостаточно товара)
 
 components:
   schemas:
@@ -92,3 +161,36 @@ components:
                 type: string
               type:
                 type: string
+
+    Part:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        quantity:
+          type: integer
+        price:
+          type: number
+        description:
+          type: string
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        partId:
+          type: integer
+        carId:
+          type: integer
+        quantity:
+          type: integer
+        type:
+          type: string
+        price:
+          type: number
+        date:
+          type: string
+          format: date-time
