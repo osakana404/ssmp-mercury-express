@@ -12,6 +12,7 @@
             <th class="px-4 py-3 font-semibold text-slate-700">Запчасть</th>
             <th class="px-4 py-3 font-semibold text-slate-700">Машина</th>
             <th class="px-4 py-3 font-semibold text-slate-700">Кол-во</th>
+            <th class="px-4 py-3 font-semibold text-slate-700">Действие</th>
             <th class="px-4 py-3 font-semibold text-slate-700">Тип</th>
             <th class="px-4 py-3 font-semibold text-slate-700">Цена</th>
             <th class="px-4 py-3 font-semibold text-slate-700">Дата</th>
@@ -28,7 +29,7 @@
               #{{ item.id }}
             </td>
 
-            <!-- Запчасть (всегда есть) -->
+            <!-- Запчасть -->
             <td class="px-4 py-4">
               <div class="font-semibold text-slate-900">
                 {{ item.Part.name }}
@@ -38,10 +39,10 @@
               </div>
             </td>
 
-            <!-- Машина (только для списаний) -->
+            <!-- Машина (только списания) -->
             <td class="px-4 py-4">
               <div
-                v-if="item.type === 'списание' && item.Car"
+                v-if="item.type === 'spisanie' && item.Car"
                 class="space-y-1"
               >
                 <div class="font-semibold text-slate-900">
@@ -50,14 +51,8 @@
                 <div class="text-sm font-mono text-slate-700">
                   {{ item.Car.number }}
                 </div>
-                <div class="text-xs text-slate-500">
-                  {{ item.Car.description }}
-                </div>
               </div>
-              <div v-else class="text-slate-400 italic text-sm">
-                <span v-if="item.type === 'приход'">—</span>
-                <span v-else class="text-slate-500">Нет данных</span>
-              </div>
+              <div v-else class="text-slate-400 italic text-sm">—</div>
             </td>
 
             <!-- Количество -->
@@ -65,7 +60,7 @@
               <span
                 :class="[
                   'inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold',
-                  item.type === 'приход'
+                  item.type === 'prihod'
                     ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800',
                 ]"
@@ -74,17 +69,43 @@
               </span>
             </td>
 
+            <!-- ✅ НОВЫЙ СТОЛБЕЦ: Действие -->
+            <td class="px-4 py-4">
+              <span
+                class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium"
+                :class="
+                  item.action === 'create'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-slate-100 text-slate-700'
+                "
+              >
+                <svg
+                  v-if="item.action === 'create'"
+                  class="w-3 h-3"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                {{ item.action === "create" ? "Создал" : "Пополнил" }}
+              </span>
+            </td>
+
             <!-- Тип -->
             <td class="px-4 py-4">
               <span
                 :class="[
                   'inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold',
-                  item.type === 'приход'
+                  item.type === 'prihod'
                     ? 'bg-green-100 text-green-800 border border-green-200'
                     : 'bg-red-100 text-red-800 border border-red-200',
                 ]"
               >
-                {{ item.type === "приход" ? "📥 Приход" : "🚗 Списание" }}
+                {{ item.type === "prihod" ? "📥 Приход" : "🚗 Списание" }}
               </span>
             </td>
 

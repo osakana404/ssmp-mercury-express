@@ -2,15 +2,11 @@ import { Part, Transaction, Car } from "../models/associations.js";
 
 export async function getAllParts(req, res, next) {
   try {
-    // Находим все запчасти в базе данных
     const parts = await Part.findAll({
-      order: [["name", "ASC"]], // Сортировка по имени от А до Я
+      order: [["name", "ASC"]],
     });
-
-    // Отправляем массив клиенту
     res.status(200).json(parts);
   } catch (error) {
-    // Если что-то пошло не так, передаем ошибку в обработчик
     next(error);
   }
 }
@@ -19,57 +15,55 @@ export async function prihod(req, res, next) {
   try {
     const { name, quantity, description, price, date } = req.body;
 
-    // 1. Валидация входных данных
     if (!name || !quantity || !price) {
       return res.status(400).json({
         message: "Имя, количество и цена обязательны для прихода",
       });
     }
 
-    // 2. Ищем, есть ли уже такая запчасть в базе
     let part = await Part.findOne({ where: { name: name } });
+    let currentAction = "increment"; // По умолчанию - пополнение
 
     if (part) {
-      // СЦЕНАРИЙ А: Запчасть найдена, просто пополняем остаток
-      // Используем атомарный increment для безопасности
+      // СЦЕНАРИЙ А: Пополнение
       await part.increment("quantity", { by: quantity });
 
-      // Если пришла новая цена, можно обновить её у запчасти
-      if (price !== part.price) {
+      // Обновляем описание и цену, если они изменились
+      if (price !== part.price || description !== part.description) {
         part.price = price;
+        part.description = description;
         await part.save();
       }
     } else {
-      // СЦЕНАРИЙ Б: Запчасти нет, создаем новую запись
+      // СЦЕНАРИЙ Б: Создание новой запчасти
       part = await Part.create({
         name,
         quantity,
         description,
         price,
       });
+      currentAction = "create"; // Меняем статус на "создание"
     }
 
-    // 3. Создаем запись о транзакции (общая логика для обоих сценариев)
-    // Используем id запчасти (нового или найденного объекта part)
+    // Создаем транзакцию с учетом поля action
     const transaction = await Transaction.create({
       partId: part.id,
       quantity: quantity,
-      type: "приход",
-      price: price, // фиксируем цену именно этой закупки
+      type: "prihod", // Латиница для удобства фронта
+      action: currentAction, // Наш новый ENUM
+      price: price,
       date: date || new Date(),
     });
 
-    // 4. Возвращаем успешный ответ
     return res.status(201).json({
-      message: "Приход успешно оформлен",
+      message: "Приход успешно оформили",
       data: {
         partName: part.name,
-        currentQuantity: part.quantity + (part instanceof Part ? 0 : 0), // Sequelize обновит объект после increment не сразу, но в базе всё ок
+        action: currentAction,
         transaction,
       },
     });
   } catch (error) {
-    // Если что-то пошло не так (например, ошибка базы), передаем ошибку в middleware
     next(error);
   }
 }
@@ -79,31 +73,30 @@ export async function spisanie(req, res, next) {
     const { partId, carId, quantity, price, date } = req.body;
 
     if (!partId || !carId || !quantity) {
-      return res.status(400).json({
-        message: "Заполните все поля",
-      });
+      return res.status(400).json({ message: "Заполните все поля" });
     }
-    const part = await Part.findByPk(partId); // ретурнит экземпляр модели (объект)
-    const car = await Car.findByPk(carId); // находим объект машины
+
+    const part = await Part.findByPk(partId);
+    const car = await Car.findByPk(carId);
+
+    if (!part) return res.status(404).json({ message: "Запчасть не найдена" });
+    if (!car) return res.status(404).json({ message: "Машина не найдена" });
+
     if (part.quantity < quantity) {
       return res
         .status(400)
-        .json({ message: "Вы пытаетесь списать больше чем нужно" });
+        .json({ message: "Недостаточное количество на складе" });
     }
-    if (!car) {
-      return res.status(404).json({ message: "Машина не найдена" });
-    }
-    // part.quantity = part.quantity - quantity;
-    // await part.save();
-    // пусть база сама вычтет:
+
     await part.decrement("quantity", { by: quantity });
 
     const transaction = await Transaction.create({
       partId: part.id,
       carId: car.id,
-      quantity: quantity, // количество сколько списал
-      type: "списание",
-      price: price || part.price, // если механик хочет зафиксировать цену из накладной вручную ИЛИ взять автоматом
+      quantity: quantity,
+      type: "spisanie", // Латиница
+      action: "increment", // Для списания action не так критичен, но поле обязательное (NOT NULL)
+      price: price || part.price,
       date: date || new Date(),
     });
 

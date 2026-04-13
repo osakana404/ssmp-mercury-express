@@ -35,6 +35,11 @@ const Transaction = sequelize.define(
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
+    action: {
+      type: DataTypes.ENUM("create", "increment"), // create=новая, increment=пополнение
+      allowNull: false,
+      defaultValue: "increment",
+    },
   },
   {
     tableName: "Transactions",
