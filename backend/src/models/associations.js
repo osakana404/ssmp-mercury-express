@@ -15,10 +15,10 @@ Files.belongsTo(News, { foreignKey: "newsId" });
 
 // Связь с Запчастями
 Part.hasMany(Transaction, { foreignKey: "partId" });
-Transaction.belongsTo(Part, { foreignKey: "partId" });
+Transaction.belongsTo(Part, { foreignKey: "partId", as: "Part" });
 
 // Связь с Машинами
 Car.hasMany(Transaction, { foreignKey: "carId" });
-Transaction.belongsTo(Car, { foreignKey: "carId" });
+Transaction.belongsTo(Car, { foreignKey: "carId", as: "Car" });
 
 export { News, Category, Files, Part, Car, Transaction };
