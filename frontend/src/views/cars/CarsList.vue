@@ -2,12 +2,7 @@
   <div class="p-6">
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-2xl font-bold text-slate-800">Автопарк</h2>
-      <button
-        @click="openModal()"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl transition-all shadow-sm flex items-center gap-2"
-      >
-        <span class="text-xl">+</span> Добавить авто
-      </button>
+      <AppButton @click="openEditModal()">Добавить авто</AppButton>
     </div>
 
     <div
@@ -31,17 +26,13 @@
             :key="car.id"
             class="hover:bg-slate-50/50 transition-colors"
           >
-            <td class="px-6 py-4">
-              <span
-                class="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-1 rounded"
-              >
-                {{ car.number }}
-              </span>
+            <td class="px-6 py-4 font-mono font-bold text-slate-900">
+              {{ car.number }}
             </td>
             <td class="px-6 py-4 text-slate-900 font-medium">
               {{ car.model }}
             </td>
-            <td class="px-6 py-4 text-slate-500 text-sm max-w-xs truncate">
+            <td class="px-6 py-4 text-slate-500 text-sm max-w-[200px] truncate">
               {{ car.description || "—" }}
             </td>
             <td class="px-6 py-4">
@@ -53,43 +44,19 @@
               </span>
             </td>
             <td class="px-6 py-4 text-right">
-              <div class="flex justify-end gap-3">
-                <button
-                  @click="openModal(car)"
-                  class="text-slate-400 hover:text-indigo-600 transition-colors"
+              <div class="flex justify-end gap-2">
+                <AppButton
+                  variant="secondary"
+                  @click="openEditModal(car)"
+                  class="!px-3 !py-1 text-sm"
+                  >Изменить</AppButton
                 >
-                  <svg
-                    class="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                </button>
-                <button
-                  @click="deleteCar(car)"
-                  class="text-slate-400 hover:text-red-600 transition-colors"
+                <AppButton
+                  variant="danger"
+                  @click="askDeleteConfirmation(car)"
+                  class="!px-3 !py-1 text-sm"
+                  >Удалить</AppButton
                 >
-                  <svg
-                    class="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
               </div>
             </td>
           </tr>
@@ -97,118 +64,131 @@
       </table>
     </div>
 
-    <div
-      v-if="isModalOpen"
-      class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    <AppModal
+      v-model="isEditModalOpen"
+      :title="editingId ? 'Правка авто' : 'Новое авто'"
     >
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div class="px-6 py-4 border-b flex justify-between items-center">
-          <h3 class="text-xl font-bold text-slate-800">
-            {{ editingId ? "Правка данных" : "Новое авто" }}
-          </h3>
-          <button
-            @click="isModalOpen = false"
-            class="text-slate-400 hover:text-slate-600 text-2xl"
+      <form @submit.prevent="saveCar" class="space-y-4">
+        <AppInput
+          v-model="form.number"
+          label="Гос. номер"
+          placeholder="Т918НЕ"
+          required
+        />
+        <AppInput
+          v-model="form.model"
+          label="Модель"
+          placeholder="Газель, УАЗ"
+          required
+        />
+        <AppTextarea v-model="form.description" label="Описание" :rows="3" />
+
+        <div>
+          <label class="block mb-2 text-sm font-medium text-slate-700"
+            >Статус</label
           >
-            &times;
-          </button>
+          <select
+            v-model="form.status"
+            class="w-full rounded border border-slate-300 bg-white px-3 py-2 outline-none focus:border-blue-500"
+          >
+            <option value="Активна">Активна</option>
+            <option value="В рейсе">В рейсе</option>
+            <option value="Ремонт">Ремонт</option>
+          </select>
         </div>
 
-        <form @submit.prevent="saveCar" class="p-6 space-y-4">
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1"
-              >Гос. номер</label
-            >
-            <input
-              v-model="form.number"
-              type="text"
-              placeholder="A 000 AA"
-              required
-              class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1"
-              >Модель</label
-            >
-            <input
-              v-model="form.model"
-              type="text"
-              placeholder="Газель, Камаз..."
-              required
-              class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1"
-              >Описание</label
-            >
-            <textarea
-              v-model="form.description"
-              rows="2"
-              class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-            ></textarea>
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-1"
-              >Статус</label
-            >
-            <select
-              v-model="form.status"
-              class="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
-            >
-              <option value="Активна">Активна</option>
-              <option value="В рейсе">В рейсе</option>
-              <option value="Ремонт">Ремонт</option>
-            </select>
-          </div>
+        <div class="flex gap-3 pt-4">
+          <AppButton
+            variant="secondary"
+            class="flex-1"
+            @click="isEditModalOpen = false"
+            >Отмена</AppButton
+          >
+          <AppButton type="submit" variant="success" class="flex-1"
+            >Сохранить</AppButton
+          >
+        </div>
+      </form>
+    </AppModal>
 
-          <div class="flex gap-3 pt-4">
-            <button
-              type="button"
-              @click="isModalOpen = false"
-              class="flex-1 px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200"
-            >
-              {{ editingId ? "Обновить" : "Создать" }}
-            </button>
-          </div>
-        </form>
+    <AppModal v-model="isConfirmModalOpen" title="Удаление">
+      <div class="text-center p-2">
+        <p class="text-slate-600">
+          Удалить <b>{{ selectedCar?.number }}</b
+          >?
+        </p>
       </div>
-    </div>
+      <template #footer>
+        <AppButton variant="secondary" @click="isConfirmModalOpen = false"
+          >Нет</AppButton
+        >
+        <AppButton variant="danger" @click="confirmDelete"
+          >Да, удалить</AppButton
+        >
+      </template>
+    </AppModal>
+
+    <AppModal v-model="statusModal.show" :title="statusModal.title">
+      <div class="text-center space-y-4">
+        <div
+          :class="statusModal.isError ? 'text-red-500' : 'text-green-500'"
+          class="text-4xl"
+        >
+          {{ statusModal.isError ? "❌" : "✅" }}
+        </div>
+        <p class="text-slate-700">{{ statusModal.message }}</p>
+        <AppButton class="w-full" @click="statusModal.show = false"
+          >Ок</AppButton
+        >
+      </div>
+    </AppModal>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
 import api from "@/api";
+import AppButton from "@/components/ui/AppButton.vue";
+import AppInput from "@/components/ui/AppInput.vue";
+import AppTextarea from "@/components/ui/AppTextarea.vue";
+import AppModal from "@/components/ui/AppModal.vue";
 
 const cars = ref([]);
-const isModalOpen = ref(false);
+const selectedCar = ref(null);
 const editingId = ref(null);
 
-const form = ref({
-  number: "",
-  model: "",
-  description: "",
-  status: "Активна",
+const isEditModalOpen = ref(false);
+const isConfirmModalOpen = ref(false);
+
+// Единое состояние для статусов (успех/ошибка)
+const statusModal = ref({
+  show: false,
+  title: "",
+  message: "",
+  isError: false,
 });
+
+const form = ref({ number: "", model: "", description: "", status: "Активна" });
+
+const showStatus = (msg, isError = false) => {
+  statusModal.value = {
+    show: true,
+    title: isError ? "Ошибка" : "Успешно",
+    message: msg,
+    isError: isError,
+  };
+};
 
 const fetchCars = async () => {
   try {
     const { data } = await api.get("/cars");
     cars.value = data;
-  } catch (error) {
-    console.error("Ошибка загрузки:", error);
+  } catch (e) {
+    showStatus("Ошибка загрузки данных", true);
   }
 };
 
-const openModal = (car = null) => {
+const openEditModal = (car = null) => {
   if (car) {
     editingId.value = car.id;
     form.value = { ...car };
@@ -216,42 +196,48 @@ const openModal = (car = null) => {
     editingId.value = null;
     form.value = { number: "", model: "", description: "", status: "Активна" };
   }
-  isModalOpen.value = true;
+  isEditModalOpen.value = true;
 };
 
 const saveCar = async () => {
   try {
     if (editingId.value) {
-      // Используем PATCH, как в твоем роутере
       await api.patch(`/cars/${editingId.value}`, form.value);
+      showStatus("Данные автомобиля обновлены");
     } else {
-      // POST запрос
       await api.post("/cars", form.value);
+      showStatus("Автомобиль успешно добавлен");
     }
+    isEditModalOpen.value = false;
     await fetchCars();
-    isModalOpen.value = false;
-  } catch (error) {
-    alert(error.response?.data?.message || "Ошибка сервера");
+  } catch (e) {
+    showStatus(e.response?.data?.message || "Ошибка при сохранении", true);
   }
 };
 
-const deleteCar = async (car) => {
-  if (!confirm(`Удалить машину ${car.number}?`)) return;
+const askDeleteConfirmation = (car) => {
+  selectedCar.value = car;
+  isConfirmModalOpen.value = true;
+};
+
+const confirmDelete = async () => {
   try {
-    await api.delete(`/cars/${car.id}`);
+    await api.delete(`/cars/${selectedCar.value.id}`);
+    isConfirmModalOpen.value = false;
+    showStatus("Автомобиль удален");
     await fetchCars();
-  } catch (error) {
-    console.error(error);
+  } catch (e) {
+    showStatus("Не удалось удалить автомобиль", true);
   }
 };
 
-const statusClass = (status) => {
-  const classes = {
+const statusClass = (s) => {
+  const styles = {
     Активна: "bg-emerald-100 text-emerald-700",
     "В рейсе": "bg-blue-100 text-blue-700",
     Ремонт: "bg-rose-100 text-rose-700",
   };
-  return classes[status] || "bg-slate-100 text-slate-600";
+  return styles[s] || "bg-slate-100 text-slate-600";
 };
 
 onMounted(fetchCars);
