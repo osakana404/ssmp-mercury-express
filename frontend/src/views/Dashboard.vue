@@ -3,7 +3,7 @@
     <div>
       <h2 class="text-2xl font-bold mb-6">Дашборд</h2>
 
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <div class="rounded-xl bg-white p-5 shadow">
           <div class="text-sm text-slate-500">Новости</div>
           <div class="mt-2 text-3xl font-bold">{{ stats.news }}</div>
@@ -12,6 +12,21 @@
         <div class="rounded-xl bg-white p-5 shadow">
           <div class="text-sm text-slate-500">Запчасти</div>
           <div class="mt-2 text-3xl font-bold">{{ stats.parts }}</div>
+        </div>
+
+        <div
+          class="rounded-xl bg-white p-5 shadow border-l-4 border-indigo-500 flex flex-col justify-between"
+        >
+          <div>
+            <div class="text-sm text-slate-500">Автопарк</div>
+            <div class="mt-2 text-3xl font-bold">{{ stats.cars }}</div>
+          </div>
+          <RouterLink
+            to="/cars"
+            class="text-xs text-indigo-600 hover:underline mt-2 block"
+          >
+            Управление →
+          </RouterLink>
         </div>
 
         <div class="rounded-xl bg-white p-5 shadow">
@@ -55,7 +70,6 @@
             </div>
           </RouterLink>
         </div>
-
         <div v-else class="text-slate-500">Новостей пока нет.</div>
       </div>
 
@@ -63,8 +77,7 @@
         <h3 class="text-lg font-semibold mb-3">Объявление от администратора</h3>
         <p class="text-white/90 leading-6">
           Добро пожаловать в Mercury Express. Здесь публикуются новости
-          компании, а также ведется учет запчастей и движений по складу. Следите
-          за обновлениями и проверяйте новые объявления.
+          компании, а также ведется учет запчастей и движений по складу.
         </p>
       </div>
     </div>
@@ -80,27 +93,35 @@ const stats = ref({
   parts: 0,
   prihod: 0,
   spisanie: 0,
+  cars: 0,
 });
 
+// ОБЯЗАТЕЛЬНО: добавь эту переменную, иначе v-for не сработает
 const latestNews = ref([]);
 
 onMounted(async () => {
-  const [newsRes, partsRes, transactionsRes] = await Promise.all([
-    api.get("/news"),
-    api.get("/parts"),
-    api.get("/transactions"),
-  ]);
+  try {
+    const [newsRes, partsRes, transactionsRes, carsRes] = await Promise.all([
+      api.get("/news"),
+      api.get("/parts"),
+      api.get("/transactions"),
+      api.get("/cars"),
+    ]);
 
-  const transactions = transactionsRes.data || [];
-  const allNews = newsRes.data || [];
+    const transactions = transactionsRes.data || [];
+    const allNews = newsRes.data || [];
 
-  stats.value = {
-    news: allNews.length,
-    parts: partsRes.data?.length || 0,
-    prihod: transactions.filter((t) => t.type === "приход").length,
-    spisanie: transactions.filter((t) => t.type === "списание").length,
-  };
+    stats.value = {
+      news: allNews.length,
+      parts: partsRes.data?.length || 0,
+      prihod: transactions.filter((t) => t.type === "prihod").length,
+      spisanie: transactions.filter((t) => t.type === "spisanie").length,
+      cars: carsRes.data?.length || 0,
+    };
 
-  latestNews.value = allNews.slice(0, 5);
+    latestNews.value = allNews.slice(0, 5);
+  } catch (error) {
+    console.error("Ошибка при получении статистики:", error);
+  }
 });
 </script>

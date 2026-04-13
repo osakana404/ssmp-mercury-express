@@ -44,7 +44,11 @@ const routes = [
         name: "parts.spisanie",
         component: () => import("@/views/parts/PartSpisanie.vue"),
       },
-
+      {
+        path: "cars",
+        name: "cars.list",
+        component: () => import("@/views/cars/CarsList.vue"),
+      },
       {
         path: "transactions",
         name: "transactions.list",

@@ -7,6 +7,7 @@
         <RouterLink to="/" class="nav-link">Дашборд</RouterLink>
         <RouterLink to="/news" class="nav-link">Новости</RouterLink>
         <RouterLink to="/parts" class="nav-link">Запчасти</RouterLink>
+        <RouterLink to="/cars" class="nav-link">Автопарк</RouterLink>
         <RouterLink to="/transactions" class="nav-link">Транзакции</RouterLink>
       </nav>
     </aside>

@@ -20,6 +20,7 @@ const Car = sequelize.define(
     },
     description: {
       type: DataTypes.TEXT,
+      defaultValue: "Без описания",
     },
     status: {
       type: DataTypes.STRING,
