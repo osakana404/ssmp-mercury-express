@@ -2,18 +2,33 @@ openapi: 3.0.0
 info:
   title: Mercury Express API
   version: 1.0.0
-  description: API для управления новостями и складским учетом запчастей
+  description: API для управления новостями и профессиональным складским учетом (FIFO)
+
+tags:
+  - name: News
+    description: Управление контентом
+  - name: Parts
+    description: Справочник запчастей
+  - name: Categories
+    description: Категории запчастей
+  - name: Suppliers
+    description: Справочник поставщиков
+  - name: Supplies
+    description: Приход товара (Накладные и партии)
+  - name: Cars
+    description: Справочник автомобилей
+  - name: Reports
+    description: Аналитика и остатки
 
 paths:
-  # --- СЕКЦИЯ НОВОСТЕЙ ---
+  # --- НОВОСТИ (Оставлено без изменений) ---
   /news:
     get:
       summary: Получить список всех новостей
-      tags:
-        - News
+      tags: [News]
       responses:
         200:
-          description: Массив новостей с вложенными категориями и файлами
+          description: OK
           content:
             application/json:
               schema:
@@ -21,176 +36,180 @@ paths:
                 items:
                   $ref: "#/components/schemas/News"
     post:
-      summary: Создать новую новость с файлами
-      tags:
-        - News
+      summary: Создать новость с файлами
+      tags: [News]
       requestBody:
-        required: true
         content:
           multipart/form-data:
             schema:
               type: object
-              required:
-                - title
-                - content
-                - categoryId
               properties:
-                title:
-                  type: string
-                  example: "Как настроить принтер"
-                content:
-                  type: string
-                  example: "Подробная инструкция по шагам..."
-                categoryId:
-                  type: integer
-                  example: 1
-                files:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
+                title: { type: string }
+                content: { type: string }
+                categoryId: { type: integer }
+                files: { type: array, items: { type: string, format: binary } }
       responses:
         201:
-          description: Новость успешно создана
+          description: Created
 
-  /news/{id}:
+  # --- КАТЕГОРИИ ЗАПЧАСТЕЙ ---
+  /categories:
     get:
-      summary: Получить одну новость по ID
-      tags:
-        - News
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      summary: Список категорий запчастей
+      tags: [Categories]
       responses:
         200:
-          description: Объект новости
-        404:
-          description: Новость не найдена
-
-  # --- СЕКЦИЯ ЗАПЧАСТЕЙ ---
-  /parts/prihod:
+          description: OK
     post:
-      summary: Оприходовать запчасть
-      tags:
-        - Parts
+      summary: Создать категорию
+      tags: [Categories]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, example: "Ходовая" }
+      responses:
+        201:
+          description: Created
+
+  # --- ЗАПЧАСТИ (Справочник) ---
+  /parts:
+    get:
+      summary: Все запчасти и их общие остатки
+      tags: [Parts]
+      responses:
+        200:
+          description: OK
+    post:
+      summary: Создать карточку запчасти
+      tags: [Parts]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                categoryId: { type: integer }
+                description: { type: string }
+      responses:
+        201:
+          description: Created
+
+  /parts/disburse:
+    post:
+      summary: Списание запчасти (FIFO) на машину
+      tags: [Parts]
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - name
-                - quantity
-                - price
+              required: [partId, carId, quantity]
               properties:
-                name:
-                  type: string
-                  example: "Масляный фильтр"
-                quantity:
-                  type: integer
-                  example: 10
-                price:
-                  type: number
-                  example: 500
-                description:
-                  type: string
-                  example: "Оригинальный фильтр"
+                partId: { type: integer }
+                carId: { type: integer }
+                quantity: { type: integer }
       responses:
         201:
-          description: Успешно оприходовано
-
-  /parts/spisanie:
-    post:
-      summary: Списать запчасть на машину
-      tags:
-        - Parts
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - partId
-                - carId
-                - quantity
-              properties:
-                partId:
-                  type: integer
-                  example: 1
-                carId:
-                  type: integer
-                  example: 1
-                quantity:
-                  type: integer
-                  example: 1
-      responses:
-        201:
-          description: Успешно списано
+          description: Успешное списание по FIFO
         400:
-          description: Ошибка (например, недостаточно товара)
+          description: Недостаточно товара или неверные ID
+
+  # --- ПОСТАВКИ (Приход) ---
+  /supplies:
+    post:
+      summary: Оформить приход (Накладная + Партии)
+      tags: [Supplies]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [supplierId, items]
+              properties:
+                supplierId: { type: integer }
+                docNumber: { type: string, example: "INV-100" }
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      partId: { type: integer }
+                      quantity: { type: integer }
+                      price: { type: number }
+      responses:
+        201:
+          description: Накладная создана, партии добавлены
+
+  # --- МАШИНЫ ---
+  /cars:
+    get:
+      summary: Список всех машин
+      tags: [Cars]
+    post:
+      summary: Добавить машину
+      tags: [Cars]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Car"
+
+  # --- ОТЧЕТЫ ---
+  /reports/inventory:
+    get:
+      summary: Отчет по остаткам и стоимости склада
+      tags: [Reports]
+      responses:
+        200:
+          description: JSON с общей суммой и детализацией по каждой запчасти
+
+  /reports/car/{carId}:
+    get:
+      summary: История расходов на конкретную машину
+      tags: [Reports]
+      parameters:
+        - name: carId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Список всех списаний для данного авто
 
 components:
   schemas:
     News:
       type: object
       properties:
-        id:
-          type: integer
-        title:
-          type: string
-        content:
-          type: string
-        categoryId:
-          type: integer
-        Category:
-          type: object
-          properties:
-            name:
-              type: string
+        id: { type: integer }
+        title: { type: string }
+        content: { type: string }
         Files:
           type: array
           items:
             type: object
             properties:
-              url:
-                type: string
-              type:
-                type: string
+              url: { type: string }
 
-    Part:
+    Car:
       type: object
       properties:
-        id:
-          type: integer
-        name:
-          type: string
-        quantity:
-          type: integer
-        price:
-          type: number
-        description:
-          type: string
+        id: { type: integer }
+        number: { type: string, example: "A001AA14" }
+        model: { type: string, example: "KAMAZ" }
+        status: { type: string, example: "в работе" }
 
-    Transaction:
+    Batch:
       type: object
       properties:
-        id:
-          type: integer
-        partId:
-          type: integer
-        carId:
-          type: integer
-        quantity:
-          type: integer
-        type:
-          type: string
-        price:
-          type: number
-        date:
-          type: string
-          format: date-time
+        id: { type: integer }
+        partId: { type: integer }
+        currentQuantity: { type: integer }
+        price: { type: number }
+        status: { type: string, example: "active" }
