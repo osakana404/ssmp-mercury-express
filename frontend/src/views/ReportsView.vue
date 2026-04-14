@@ -147,7 +147,9 @@ const loadBaseData = async () => {
       inventoryApi.getInventoryReport(),
       inventoryApi.getCars(),
     ]);
-    storeValue.ref = inv.data.totalStoreValue;
+
+    storeValue.value = inv.data.totalStoreValue;
+
     inventoryParts.value = inv.data.parts;
     cars.value = cRes.data;
   } catch (e) {

@@ -5,42 +5,61 @@ import {
   Car,
   PartCategory,
 } from "../models/associations.js";
-import { sequelize } from "../config/db.js";
 import { Op } from "sequelize";
 
 // 1. Отчет по остаткам (Стоимость склада)
 export async function getInventoryReport(req, res, next) {
   try {
     const report = await Part.findAll({
-      attributes: [
-        "id",
-        "name",
-        "quantity",
-        // Считаем сумму остатков по каждой запчасти через связанные активные партии
-        [
-          sequelize.literal(`(
-            SELECT SUM(currentQuantity * price)
-            FROM Batches
-            WHERE Batches.partId = Part.id AND Batches.status = 'active'
-          )`),
-          "totalValue",
-        ],
+      attributes: ["id", "name", "quantity"],
+      include: [
+        {
+          model: PartCategory,
+          as: "category",
+          attributes: ["name"],
+        },
+        {
+          model: Batch,
+          as: "batches",
+          attributes: ["currentQuantity", "price"],
+          where: {
+            currentQuantity: { [Op.gt]: 0 }, // Берем только те, где что-то есть
+            status: "active",
+          },
+          required: false, // Чтобы запчасть показывалась в списке, даже если партий нет
+        },
       ],
-      include: [{ model: PartCategory, as: "category", attributes: ["name"] }],
       order: [["name", "ASC"]],
     });
+    //150877
 
-    // Считаем общую сумму всего склада
-    const totalStoreValue = report.reduce(
-      (acc, part) => acc + (Number(part.getDataValue("totalValue")) || 0),
+    // Обрабатываем данные в JS (это надежнее и проще отлаживать)
+    const formattedReport = report.map((part) => {
+      const partJson = part.toJSON();
+
+      // Считаем сумму по всем пришедшим партиям для этой запчасти
+      const totalValue = (partJson.batches || []).reduce((sum, batch) => {
+        return sum + batch.currentQuantity * batch.price;
+      }, 0);
+
+      return {
+        ...partJson,
+        totalValue: Number(totalValue.toFixed(2)),
+      };
+    });
+
+    // Считаем общую сумму склада
+    const totalStoreValue = formattedReport.reduce(
+      (acc, part) => acc + part.totalValue,
       0,
     );
 
     res.json({
-      totalStoreValue,
-      parts: report,
+      totalStoreValue: Number(totalStoreValue.toFixed(2)),
+      parts: formattedReport,
     });
   } catch (error) {
+    console.error("Ошибка в отчете:", error);
     next(error);
   }
 }
@@ -63,14 +82,17 @@ export async function getCarExpenseReport(req, res, next) {
       order: [["date", "DESC"]],
     });
 
-    const totalSpent = expenses.reduce((acc, t) => acc + t.sum, 0);
+    const totalSpent = expenses.reduce(
+      (acc, t) => acc + (parseFloat(t.sum) || 0),
+      0,
+    );
 
     res.json({
       car: {
         number: car.number,
         model: car.model,
       },
-      totalSpent,
+      totalSpent: Number(totalSpent.toFixed(2)), // Округляем до копеек
       history: expenses,
     });
   } catch (error) {

@@ -1,18 +1,34 @@
 import { createRouter, createWebHistory } from "vue-router";
-import DashboardView from "../views/DashboardView.vue";
-import PartsView from "../views/PartsView.vue"; // Твой код со складом
-import BatchesView from "../views/BatchesView.vue";
-import TransactionsView from "../views/TransactionsView.vue";
 
 const routes = [
-  { path: "/", name: "dashboard", component: DashboardView },
-  { path: "/parts", name: "parts", component: PartsView },
-  { path: "/batches", name: "batches", component: BatchesView },
-  { path: "/transactions", name: "transactions", component: TransactionsView },
+  {
+    path: "/parts",
+    component: () => import("../views/PartsView.vue"),
+  },
+  {
+    path: "/supplies",
+    component: () => import("../views/SuppliesView.vue"),
+  },
+  {
+    path: "/disburse",
+    component: () => import("../views/DisburseView.vue"),
+  },
+  {
+    path: "/transactions",
+    component: () => import("../views/TransactionsView.vue"),
+  },
   {
     path: "/reports",
-    name: "reports",
     component: () => import("../views/ReportsView.vue"),
+  },
+  {
+    path: "/settings",
+    component: () => import("../views/SettingsView.vue"),
+  },
+  {
+    path: "/batches",
+    name: "batches",
+    component: () => import("../views/BatchesView.vue"),
   },
 ];
 

@@ -15,10 +15,15 @@ export async function getAllSupplies(req, res, next) {
         {
           model: Batch,
           as: "batches",
-          include: [{ model: Part, attributes: ["name"] }],
+          include: [{ model: Part, as: "part", attributes: ["name"] }],
         },
       ],
-      order: [["date", "DESC"]],
+      // Сортировка: сначала по дате документа (которую ввел юзер),
+      // а если даты равны — по ID (самые новые созданные записи будут выше)
+      order: [
+        ["date", "DESC"],
+        ["id", "DESC"],
+      ],
     });
     res.json(supplies);
   } catch (error) {
@@ -32,14 +37,12 @@ export async function createFullSupply(req, res, next) {
   try {
     const { supplierId, docNumber, date, items } = req.body;
 
-    // ШАГ 0: Валидация входных данных
     if (!supplierId || !items || !items.length) {
       return res
         .status(400)
         .json({ message: "Не указан поставщик или список товаров" });
     }
 
-    // Проверяем, существует ли поставщик
     const supplier = await Supplier.findByPk(supplierId);
     if (!supplier) {
       await t.rollback();
@@ -48,7 +51,6 @@ export async function createFullSupply(req, res, next) {
         .json({ message: `Поставщик с ID ${supplierId} не найден` });
     }
 
-    // 1. Создаем накладную
     const newSupply = await Supply.create(
       {
         supplierId,
@@ -62,15 +64,12 @@ export async function createFullSupply(req, res, next) {
       { transaction: t },
     );
 
-    // 2. Обрабатываем товары
     for (const item of items) {
-      // Проверяем существование запчасти
       const part = await Part.findByPk(item.partId);
       if (!part) {
         throw new Error(`Запчасть с ID ${item.partId} не найдена в базе`);
       }
 
-      // Создаем партию
       await Batch.create(
         {
           partId: item.partId,
@@ -83,7 +82,6 @@ export async function createFullSupply(req, res, next) {
         { transaction: t },
       );
 
-      // Обновляем остаток
       await part.update(
         {
           quantity: part.quantity + item.quantity,
@@ -91,15 +89,17 @@ export async function createFullSupply(req, res, next) {
         { transaction: t },
       );
 
-      // Логируем транзакцию
+      // ИСПРАВЛЕНО: Добавлен supplyId, чтобы транзакция знала, к какой накладной относится
       await Transaction.create(
         {
           partId: item.partId,
+          supplyId: newSupply.id, // Добавили связь с накладной
           quantity: item.quantity,
           type: "приход",
           price: item.price,
           sum: item.price * item.quantity,
-          action: "increment",
+          // action мы убрали из модели, если ты ее обновил,
+          // если оставил - оставь, но лучше убрать за ненадобностью
         },
         { transaction: t },
       );
@@ -109,7 +109,6 @@ export async function createFullSupply(req, res, next) {
     res.status(201).json(newSupply);
   } catch (error) {
     await t.rollback();
-    // Если мы сами выбросили ошибку про запчасть — вернем её текст
     if (error.message.includes("не найдена")) {
       return res.status(404).json({ message: error.message });
     }

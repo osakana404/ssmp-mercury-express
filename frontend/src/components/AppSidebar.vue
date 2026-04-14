@@ -1,28 +1,37 @@
 <template>
-  <aside
-    class="w-64 bg-slate-900 text-slate-300 min-h-screen flex flex-col shadow-xl"
-  >
-    <div
-      class="p-6 text-white font-bold text-2xl border-b border-slate-800 uppercase tracking-widest"
-    >
-      Mercury <span class="text-blue-500 font-black">SSMP</span>
-    </div>
-    <nav class="flex-1 p-4 space-y-2">
-      <RouterLink to="/" class="nav-link" active-class="active">
-        🏠 Дашборд
-      </RouterLink>
-      <RouterLink to="/parts" class="nav-link" active-class="active">
-        ⚙️ Запчасти
-      </RouterLink>
-      <RouterLink to="/batches" class="nav-link" active-class="active">
-        📦 Партии (Batch)
-      </RouterLink>
-      <RouterLink to="/transactions" class="nav-link" active-class="active">
-        🔄 Транзакции
-      </RouterLink>
-      <RouterLink to="/reports" class="nav-link" active-class="active">
-        📊 Отчеты (Финансы)
-      </RouterLink>
+  <aside class="w-64 bg-slate-900 min-h-screen text-white p-4">
+    <div class="mb-8 font-bold text-xl text-center">MERCURY</div>
+
+    <nav class="space-y-2">
+      <div class="text-slate-500 text-[10px] uppercase font-bold px-4 mb-2">
+        Склад
+      </div>
+      <RouterLink to="/settings" class="block p-3 hover:bg-slate-800 rounded"
+        >Справочники</RouterLink
+      >
+      <RouterLink to="/batches" class="block p-3 hover:bg-slate-800 rounded"
+        >Партии</RouterLink
+      >
+      <RouterLink to="/supplies" class="block p-3 hover:bg-slate-800 rounded"
+        >Приход товара</RouterLink
+      >
+      <RouterLink to="/disburse" class="block p-3 hover:bg-slate-800 rounded"
+        >Списание на авто</RouterLink
+      >
+      <RouterLink
+        to="/transactions"
+        class="block p-3 hover:bg-slate-800 rounded"
+        >Журнал операций</RouterLink
+      >
+
+      <div class="h-4"></div>
+
+      <div class="text-slate-500 text-[10px] uppercase font-bold px-4 mb-2">
+        Отчеты
+      </div>
+      <RouterLink to="/reports" class="block p-3 hover:bg-slate-800 rounded"
+        >Финансы</RouterLink
+      >
     </nav>
   </aside>
 </template>
