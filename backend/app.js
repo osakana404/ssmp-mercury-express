@@ -10,6 +10,10 @@ import swaggerUi from "swagger-ui-express";
 import { transactionRouter } from "./src/routes/transactionRouter.js";
 import { partRouter } from "./src/routes/partRouter.js";
 import { carRouter } from "./src/routes/carRouter.js";
+import { supplierRouter } from "./src/routes/supplierRouter.js";
+import { supplyRouter } from "./src/routes/supplyRouter.js";
+import { categoryRouter } from "./src/routes/categoryRouter.js";
+import { reportRouter } from "./src/routes/reportRouter.js";
 
 const swaggerOptions = {
   definition: {
@@ -58,6 +62,10 @@ app.use("/api/v1/news", newsRouter);
 app.use("/api/v1/parts", partRouter);
 app.use("/api/v1/transactions", transactionRouter);
 app.use("/api/v1/cars", carRouter);
+app.use("/api/v1/suppliers", supplierRouter);
+app.use("/api/v1/supply", supplyRouter);
+app.use("/api/v1/categories", categoryRouter);
+app.use("/api/v1/reports", reportRouter);
 
 // Правильный единый обработчик ошибок
 app.use((err, req, res, next) => {

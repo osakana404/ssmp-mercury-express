@@ -40,6 +40,11 @@ const Transaction = sequelize.define(
       allowNull: false,
       defaultValue: "increment",
     },
+    sum: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+      defaultValue: "0",
+    },
   },
   {
     tableName: "Transactions",

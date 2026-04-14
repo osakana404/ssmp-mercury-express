@@ -15,14 +15,14 @@ const Part = sequelize.define(
     },
     quantity: {
       type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
-    price: {
-      type: DataTypes.FLOAT, // или DECIMAL(10, 2) для денег
-      defaultValue: 0,
+      defaultValue: 0, // Оставляем как общий счетчик
     },
     description: {
       type: DataTypes.TEXT,
+    },
+    categoryId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
   },
   {

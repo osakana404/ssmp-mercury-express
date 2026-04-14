@@ -1,8 +1,12 @@
-import { Part, Transaction, Car } from "../models/associations.js";
+import { Part, PartCategory, Batch } from "../models/associations.js";
 
+// 1. Получить все запчасти (с категориями и остатками)
 export async function getAllParts(req, res, next) {
   try {
     const parts = await Part.findAll({
+      include: [
+        { model: PartCategory, as: "category" }, // Видим название категории
+      ],
       order: [["name", "ASC"]],
     });
     res.status(200).json(parts);
@@ -11,98 +15,92 @@ export async function getAllParts(req, res, next) {
   }
 }
 
-export async function prihod(req, res, next) {
+// 2. Создать карточку запчасти (без прихода, просто регистрация в базе)
+export async function createPart(req, res, next) {
   try {
-    const { name, quantity, description, price, date } = req.body;
+    const { name, description, categoryId } = req.body;
 
-    if (!name || !quantity || !price) {
-      return res.status(400).json({
-        message: "Имя, количество и цена обязательны для прихода",
-      });
+    if (!name) {
+      return res.status(400).json({ message: "Название запчасти обязательно" });
     }
 
-    let part = await Part.findOne({ where: { name: name } });
-    let currentAction = "increment"; // По умолчанию - пополнение
-
-    if (part) {
-      // СЦЕНАРИЙ А: Пополнение
-      await part.increment("quantity", { by: quantity });
-
-      // Обновляем описание и цену, если они изменились
-      if (price !== part.price || description !== part.description) {
-        part.price = price;
-        part.description = description;
-        await part.save();
-      }
-    } else {
-      // СЦЕНАРИЙ Б: Создание новой запчасти
-      part = await Part.create({
-        name,
-        quantity,
-        description,
-        price,
-      });
-      currentAction = "create"; // Меняем статус на "создание"
-    }
-
-    // Создаем транзакцию с учетом поля action
-    const transaction = await Transaction.create({
-      partId: part.id,
-      quantity: quantity,
-      type: "prihod", // Латиница для удобства фронта
-      action: currentAction, // Наш новый ENUM
-      price: price,
-      date: date || new Date(),
+    const newPart = await Part.create({
+      name,
+      description,
+      categoryId,
+      quantity: 0, // При создании всегда 0, пока не сделаем Supply
     });
 
-    return res.status(201).json({
-      message: "Приход успешно оформили",
-      data: {
-        partName: part.name,
-        action: currentAction,
-        transaction,
-      },
-    });
+    res.status(201).json(newPart);
   } catch (error) {
     next(error);
   }
 }
 
-export async function spisanie(req, res, next) {
+// 3. Получить одну запчасть детально (включая все её активные партии)
+export async function getPartById(req, res, next) {
   try {
-    const { partId, carId, quantity, price, date } = req.body;
-
-    if (!partId || !carId || !quantity) {
-      return res.status(400).json({ message: "Заполните все поля" });
-    }
-
-    const part = await Part.findByPk(partId);
-    const car = await Car.findByPk(carId);
-
-    if (!part) return res.status(404).json({ message: "Запчасть не найдена" });
-    if (!car) return res.status(404).json({ message: "Машина не найдена" });
-
-    if (part.quantity < quantity) {
-      return res
-        .status(400)
-        .json({ message: "Недостаточное количество на складе" });
-    }
-
-    await part.decrement("quantity", { by: quantity });
-
-    const transaction = await Transaction.create({
-      partId: part.id,
-      carId: car.id,
-      quantity: quantity,
-      type: "spisanie", // Латиница
-      action: "increment", // Для списания action не так критичен, но поле обязательное (NOT NULL)
-      price: price || part.price,
-      date: date || new Date(),
+    const { id } = req.params;
+    const part = await Part.findByPk(id, {
+      include: [
+        { model: PartCategory, as: "category" },
+        {
+          model: Batch,
+          as: "batches",
+          where: { status: "active" },
+          required: false, // Если партий нет, всё равно покажем запчасть
+        },
+      ],
     });
 
-    return res
-      .status(201)
-      .json({ message: "Успешно списано!", data: transaction });
+    if (!part) {
+      return res.status(404).json({ message: "Запчасть не найдена" });
+    }
+
+    res.status(200).json(part);
+  } catch (error) {
+    next(error);
+  }
+}
+
+// 4. Редактировать карточку (название, описание, категорию)
+export async function updatePart(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { name, description, categoryId } = req.body;
+
+    const part = await Part.findByPk(id);
+    if (!part) {
+      return res.status(404).json({ message: "Запчасть не найдена" });
+    }
+
+    await part.update({ name, description, categoryId });
+    res.status(200).json(part);
+  } catch (error) {
+    next(error);
+  }
+}
+
+// 5. Удалить запчасть
+export async function deletePart(req, res, next) {
+  try {
+    const { id } = req.params;
+    const part = await Part.findByPk(id);
+
+    if (!part) {
+      return res.status(404).json({ message: "Запчасть не найдена" });
+    }
+
+    // Проверяем, есть ли остатки, прежде чем удалять
+    if (part.quantity > 0) {
+      return res.status(400).json({
+        message:
+          "Нельзя удалить запчасть, пока она есть на складе. Сначала спишите остатки.",
+      });
+    }
+
+    await part.destroy();
+    res.status(200).json({ message: "Карточка запчасти удалена" });
   } catch (error) {
     next(error);
   }
