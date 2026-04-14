@@ -12,38 +12,38 @@ const Transaction = sequelize.define(
     partId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      // Поле для связи с таблицей Parts
     },
     carId: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      // Разрешаем null, так как при "приходе" машина не нужна
+      allowNull: true, // Только для списания
+    },
+    supplyId: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // Только для прихода
+    },
+    type: {
+      type: DataTypes.ENUM("приход", "списание"),
+      allowNull: false,
     },
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    type: {
-      type: DataTypes.STRING, // "приход" или "списание"
+    price: {
+      type: DataTypes.FLOAT, // Цена за единицу в этой операции
       allowNull: false,
     },
-    price: {
-      type: DataTypes.FLOAT,
+    sum: {
+      type: DataTypes.FLOAT, // Итого: quantity * price
       allowNull: false,
     },
     date: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
-    action: {
-      type: DataTypes.ENUM("create", "increment"), // create=новая, increment=пополнение
-      allowNull: false,
-      defaultValue: "increment",
-    },
-    sum: {
-      type: DataTypes.FLOAT,
-      allowNull: false,
-      defaultValue: "0",
+    comment: {
+      type: DataTypes.TEXT,
+      allowNull: true, // Можно добавить причину списания или заметку
     },
   },
   {

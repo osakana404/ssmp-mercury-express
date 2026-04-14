@@ -14,6 +14,7 @@ import { supplierRouter } from "./src/routes/supplierRouter.js";
 import { supplyRouter } from "./src/routes/supplyRouter.js";
 import { categoryRouter } from "./src/routes/categoryRouter.js";
 import { reportRouter } from "./src/routes/reportRouter.js";
+import { batchRouter } from "./src/routes/batchRouter.js";
 
 const swaggerOptions = {
   definition: {
@@ -66,6 +67,7 @@ app.use("/api/v1/suppliers", supplierRouter);
 app.use("/api/v1/supply", supplyRouter);
 app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/reports", reportRouter);
+app.use("/api/v1/batches", batchRouter);
 
 // Правильный единый обработчик ошибок
 app.use((err, req, res, next) => {

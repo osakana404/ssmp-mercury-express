@@ -7,6 +7,25 @@ import {
   Supplier,
 } from "../models/associations.js";
 
+export async function getAllSupplies(req, res, next) {
+  try {
+    const supplies = await Supply.findAll({
+      include: [
+        { model: Supplier, as: "supplier", attributes: ["name"] },
+        {
+          model: Batch,
+          as: "batches",
+          include: [{ model: Part, attributes: ["name"] }],
+        },
+      ],
+      order: [["date", "DESC"]],
+    });
+    res.json(supplies);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function createFullSupply(req, res, next) {
   const t = await sequelize.transaction();
 

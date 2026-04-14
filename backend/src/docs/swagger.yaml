@@ -1,30 +1,34 @@
 openapi: 3.0.0
 info:
   title: Mercury Express API
-  version: 1.0.0
-  description: API для управления новостями и профессиональным складским учетом (FIFO)
+  version: 1.2.0
+  description: API для управления новостями и профессиональным складским учетом (FIFO, Партии, Транзакции, Отчеты)
 
 tags:
   - name: News
-    description: Управление контентом
+    description: Управление контентом и файлами
   - name: Parts
-    description: Справочник запчастей
+    description: Справочник запчастей и списание
   - name: Categories
     description: Категории запчастей
   - name: Suppliers
     description: Справочник поставщиков
   - name: Supplies
-    description: Приход товара (Накладные и партии)
+    description: Приход товара (Накладные)
+  - name: Batches
+    description: Управление конкретными партиями товара
+  - name: Transactions
+    description: Журнал всех операций (аудит движений)
   - name: Cars
     description: Справочник автомобилей
   - name: Reports
-    description: Аналитика и остатки
+    description: Аналитика, остатки и история расходов
 
 paths:
-  # --- НОВОСТИ (Оставлено без изменений) ---
+  # --- НОВОСТИ ---
   /news:
     get:
-      summary: Получить список всех новостей
+      summary: Список всех новостей
       tags: [News]
       responses:
         200:
@@ -33,8 +37,7 @@ paths:
             application/json:
               schema:
                 type: array
-                items:
-                  $ref: "#/components/schemas/News"
+                items: { $ref: "#/components/schemas/News" }
     post:
       summary: Создать новость с файлами
       tags: [News]
@@ -49,39 +52,15 @@ paths:
                 categoryId: { type: integer }
                 files: { type: array, items: { type: string, format: binary } }
       responses:
-        201:
-          description: Created
+        201: { description: Created }
 
-  # --- КАТЕГОРИИ ЗАПЧАСТЕЙ ---
-  /categories:
-    get:
-      summary: Список категорий запчастей
-      tags: [Categories]
-      responses:
-        200:
-          description: OK
-    post:
-      summary: Создать категорию
-      tags: [Categories]
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name: { type: string, example: "Ходовая" }
-      responses:
-        201:
-          description: Created
-
-  # --- ЗАПЧАСТИ (Справочник) ---
+  # --- ЗАПЧАСТИ ---
   /parts:
     get:
       summary: Все запчасти и их общие остатки
       tags: [Parts]
       responses:
-        200:
-          description: OK
+        200: { description: OK }
     post:
       summary: Создать карточку запчасти
       tags: [Parts]
@@ -95,8 +74,7 @@ paths:
                 categoryId: { type: integer }
                 description: { type: string }
       responses:
-        201:
-          description: Created
+        201: { description: Created }
 
   /parts/disburse:
     post:
@@ -113,16 +91,35 @@ paths:
                 partId: { type: integer }
                 carId: { type: integer }
                 quantity: { type: integer }
+                comment: { type: string }
       responses:
-        201:
-          description: Успешное списание по FIFO
-        400:
-          description: Недостаточно товара или неверные ID
+        201: { description: Успешное списание }
+        400: { description: Недостаточно товара }
 
-  # --- ПОСТАВКИ (Приход) ---
+  # --- ПАРТИИ (BATCHES) ---
+  /batches:
+    get:
+      summary: Список всех партий (архив)
+      tags: [Batches]
+      responses:
+        200: { description: OK }
+
+  /batches/active:
+    get:
+      summary: Список партий, которые сейчас в наличии
+      tags: [Batches]
+      responses:
+        200: { description: OK }
+
+  # --- ПРИХОД (SUPPLIES) ---
   /supplies:
+    get:
+      summary: История всех накладных
+      tags: [Supplies]
+      responses:
+        200: { description: OK }
     post:
-      summary: Оформить приход (Накладная + Партии)
+      summary: Оформить новый приход
       tags: [Supplies]
       requestBody:
         required: true
@@ -133,7 +130,7 @@ paths:
               required: [supplierId, items]
               properties:
                 supplierId: { type: integer }
-                docNumber: { type: string, example: "INV-100" }
+                docNumber: { type: string }
                 items:
                   type: array
                   items:
@@ -143,35 +140,33 @@ paths:
                       quantity: { type: integer }
                       price: { type: number }
       responses:
-        201:
-          description: Накладная создана, партии добавлены
+        201: { description: Накладная и партии созданы }
 
-  # --- МАШИНЫ ---
-  /cars:
+  # --- ТРАНЗАКЦИИ (ЖУРНАЛ ОПЕРАЦИЙ) ---
+  /transactions:
     get:
-      summary: Список всех машин
-      tags: [Cars]
-    post:
-      summary: Добавить машину
-      tags: [Cars]
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Car"
+      summary: Получить полный журнал всех движений (приходы и списания)
+      tags: [Transactions]
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Transaction" }
 
   # --- ОТЧЕТЫ ---
   /reports/inventory:
     get:
-      summary: Отчет по остаткам и стоимости склада
+      summary: Общая стоимость склада и остатки
       tags: [Reports]
       responses:
-        200:
-          description: JSON с общей суммой и детализацией по каждой запчасти
+        200: { description: OK }
 
   /reports/car/{carId}:
     get:
-      summary: История расходов на конкретную машину
+      summary: Сколько денег потрачено на конкретную машину
       tags: [Reports]
       parameters:
         - name: carId
@@ -179,8 +174,7 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        200:
-          description: Список всех списаний для данного авто
+        200: { description: OK }
 
 components:
   schemas:
@@ -201,9 +195,9 @@ components:
       type: object
       properties:
         id: { type: integer }
-        number: { type: string, example: "A001AA14" }
-        model: { type: string, example: "KAMAZ" }
-        status: { type: string, example: "в работе" }
+        number: { type: string }
+        model: { type: string }
+        status: { type: string }
 
     Batch:
       type: object
@@ -212,4 +206,33 @@ components:
         partId: { type: integer }
         currentQuantity: { type: integer }
         price: { type: number }
-        status: { type: string, example: "active" }
+        status: { type: string, enum: [active, empty] }
+
+    Transaction:
+      type: object
+      properties:
+        id: { type: integer }
+        partId: { type: integer }
+        carId: { type: integer, nullable: true }
+        supplyId: { type: integer, nullable: true }
+        type: { type: string, enum: [приход, списание] }
+        quantity: { type: integer }
+        price: { type: number }
+        sum: { type: number }
+        date: { type: string, format: date-time }
+        comment: { type: string, nullable: true }
+        Part:
+          type: object
+          properties:
+            name: { type: string }
+        Car:
+          type: object
+          nullable: true
+          properties:
+            number: { type: string }
+            model: { type: string }
+        supply:
+          type: object
+          nullable: true
+          properties:
+            docNumber: { type: string }
