@@ -30,6 +30,11 @@ const routes = [
     name: "batches",
     component: () => import("../views/BatchesView.vue"),
   },
+  {
+    path: "/:pathMatch(.*)*", // Регулярка для отлова всех путей, которых нет выше
+    name: "NotFound",
+    component: () => import("../views/NotFound.vue"),
+  },
 ];
 
 const router = createRouter({
