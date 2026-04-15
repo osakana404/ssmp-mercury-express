@@ -136,6 +136,33 @@
       </table>
     </div>
 
+    <!-- Модалка -->
+    <AppModal v-model="alertModal.show" :title="alertModal.title" size="sm">
+      <div class="text-center py-4">
+        <div
+          class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+          :class="
+            alertModal.isError
+              ? 'bg-red-100 text-red-600'
+              : 'bg-green-100 text-green-600'
+          "
+        >
+          <span class="text-3xl">{{ alertModal.isError ? "✕" : "✓" }}</span>
+        </div>
+        <p class="text-slate-600 font-medium">{{ alertModal.message }}</p>
+      </div>
+      <template #footer>
+        <AppButton
+          :variant="alertModal.isError ? 'danger' : 'success'"
+          @click="alertModal.show = false"
+          class="w-full"
+        >
+          Понятно
+        </AppButton>
+      </template>
+    </AppModal>
+    <!-- модалка -->
+
     <AppModal v-model="showModal" title="Новая накладная" size="lg">
       <div class="space-y-6">
         <div
@@ -266,7 +293,17 @@ const parts = ref([]);
 const showModal = ref(false);
 const expandedRows = ref([]);
 const searchQuery = ref("");
-
+// 2. Добавь новое состояние
+const alertModal = ref({
+  show: false,
+  title: "",
+  message: "",
+  isError: false,
+});
+// Функция-помощник для вызова уведомления
+const showAlert = (title, message, isError = false) => {
+  alertModal.value = { show: true, title, message, isError };
+};
 // Фильтрация для поиска
 const filteredSupplies = computed(() => {
   if (!searchQuery.value) return supplies.value;
@@ -350,14 +387,24 @@ const addItem = () =>
   form.value.items.push({ partId: null, quantity: 1, price: 0 });
 const removeItem = (idx) => form.value.items.splice(idx, 1);
 
+// 3. Обновленный метод отправки
 const submitSupply = async () => {
   try {
     await inventoryApi.createSupply(form.value);
-    showModal.value = false;
+    showModal.value = false; // Закрываем форму ввода
     await loadData();
-    alert("Накладная проведена!");
+
+    // Вместо alert() вызываем нашу модалку
+    showAlert(
+      "Успех",
+      "Накладная успешно проведена и добавлена в базу данных.",
+      false,
+    );
   } catch (e) {
-    alert("Ошибка: " + (e.response?.data?.message || "Ошибка сервера"));
+    const errorMsg =
+      e.response?.data?.message ||
+      "Не удалось сохранить накладную. Проверьте соединение с сервером.";
+    showAlert("Ошибка", errorMsg, true);
   }
 };
 

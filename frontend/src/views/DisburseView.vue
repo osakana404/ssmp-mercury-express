@@ -145,6 +145,37 @@
         </AppButton>
       </template>
     </AppModal>
+
+    <AppModal v-model="alertModal.show" :title="alertModal.title">
+      <div class="text-center py-4">
+        <div
+          class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+          :class="
+            alertModal.isError
+              ? 'bg-red-100 text-red-600'
+              : 'bg-emerald-100 text-emerald-600'
+          "
+        >
+          <span class="text-3xl font-bold">
+            {{ alertModal.isError ? "✕" : "✓" }}
+          </span>
+        </div>
+
+        <p class="text-slate-600 font-medium">
+          {{ alertModal.message }}
+        </p>
+      </div>
+
+      <template #footer>
+        <AppButton
+          :variant="alertModal.isError ? 'danger' : 'success'"
+          @click="alertModal.show = false"
+          class="w-full"
+        >
+          Понятно
+        </AppButton>
+      </template>
+    </AppModal>
   </div>
 </template>
 
@@ -167,6 +198,21 @@ const form = ref({
   comment: "",
 });
 
+// Создаем реактивный объект для управления уведомлением
+const alertModal = ref({
+  show: false, // Видна ли модалка
+  title: "", // Заголовок (Успех/Ошибка)
+  message: "", // Текст сообщения
+  isError: false, // Флаг для смены цвета (красный/зеленый)
+});
+const showAlert = (title, message, isError = false) => {
+  alertModal.value = {
+    show: true,
+    title,
+    message,
+    isError,
+  };
+};
 // Только те запчасти, которые реально есть на складе
 const availableParts = computed(() =>
   parts.value.filter((p) => p.quantity > 0),
@@ -201,13 +247,19 @@ const loadData = async () => {
 const submitDisburse = async () => {
   try {
     await inventoryApi.disbursePart(form.value);
-    showModal.value = false;
-    // Очистка формы
+    showModal.value = false; // Закрываем основную форму ввода
+
+    await loadData(); // Обновляем данные в таблице
+
+    // ВМЕСТО alert("Успех")
+    showAlert("Готово!", "Деталь успешно списана.", false);
+
+    // Очищаем форму для следующего раза
     form.value = { carId: null, partId: null, quantity: 1, comment: "" };
-    await loadData(); // Обновляем остатки и список
-    alert("Запчасть успешно списана на автомобиль!");
   } catch (e) {
-    alert(e.response?.data?.message || "Ошибка списания");
+    // ВМЕСТО alert("Ошибка")
+    const msg = e.response?.data?.message || "Ошибка при связи с сервером";
+    showAlert("Проблема", msg, true);
   }
 };
 
